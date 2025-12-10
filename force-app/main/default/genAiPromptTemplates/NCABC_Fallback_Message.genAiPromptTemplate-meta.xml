@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GenAiPromptTemplate xmlns="http://soap.sforce.com/2006/04/metadata">
+    <activeVersionIdentifier>9I5BSznq4bUV2cTBntZfNe5/0/BQJkefjcYeeIY9yMI=_1</activeVersionIdentifier>
+    <developerName>NCABC_Fallback_Message</developerName>
+    <masterLabel>NCABC_Fallback_Message</masterLabel>
+    <templateVersions>
+        <content>I apologize, but I couldn&apos;t find specific information about your query in our knowledge bases.
+
+**To better assist you, please consider:**
+- Rephrasing your question with more specific details or keywords
+- Checking if your question relates to topics covered in our NCABC or ABC documentation
+- Contacting our support team directly for specialized assistance
+
+**Alternative Options:**
+- Visit our official website for comprehensive information: https://www.abc.nc.gov/
+- Browse our documentation categories to explore available topics
+- Submit a detailed support ticket for personalized assistance
+- Check our FAQ section for commonly asked questions
+
+**Need More Help?** 
+You can find additional resources and information at: https://www.abc.nc.gov/ 
+Is there anything else I can help you with, or would you like to rephrase your question?
+</content>
+        <inputs>
+            <apiName>Query</apiName>
+            <definition>primitive://String</definition>
+            <referenceName>Input:Query</referenceName>
+            <required>true</required>
+        </inputs>
+        <inputs>
+            <apiName>RetrieverIdOrName</apiName>
+            <definition>primitive://String</definition>
+            <referenceName>Input:RetrieverIdOrName</referenceName>
+            <required>true</required>
+        </inputs>
+        <primaryModel>sfdc_ai__DefaultOpenAIGPT4OmniMini</primaryModel>
+        <status>Published</status>
+        <versionIdentifier>9I5BSznq4bUV2cTBntZfNe5/0/BQJkefjcYeeIY9yMI=_1</versionIdentifier>
+    </templateVersions>
+    <type>einstein_gpt__knowledgeAnswers</type>
+    <visibility>Global</visibility>
+</GenAiPromptTemplate>

@@ -1,0 +1,28 @@
+{
+  "required" : [ "Input:RetrieverIdOrName", "Input:Query" ],
+  "unevaluatedProperties" : false,
+  "properties" : {
+    "Input:RetrieverIdOrName" : {
+      "title" : "RetrieverIdOrName",
+      "description" : "The unique identifier or name of the NCABC Information Library retriever. This should be set to \"File_NCABC_Information_Assistant_Library_1Cx_5Pp1db58e2c\" to search the NCABC specialized knowledge base.",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "Input:Query" : {
+      "title" : "Query",
+      "description" : "The user's search query or question that needs to be searched in the NCABC Information Library. This should capture the complete user intent and context from the conversation.",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : true
+    },
+    "citationMode" : {
+      "title" : "Citation Mode",
+      "description" : "Determines how citations should be formatted and returned with the search results. Set to \"detailed\" to provide comprehensive source attribution from the NCABC Information Library.",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    }
+  },
+  "lightning:type" : "lightning__objectType"
+}

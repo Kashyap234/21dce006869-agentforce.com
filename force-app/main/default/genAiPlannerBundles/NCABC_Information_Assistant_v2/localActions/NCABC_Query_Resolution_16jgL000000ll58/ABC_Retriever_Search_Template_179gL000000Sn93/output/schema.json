@@ -1,0 +1,24 @@
+{
+  "unevaluatedProperties" : false,
+  "properties" : {
+    "promptResponse" : {
+      "title" : "Prompt Response",
+      "description" : "The AI-generated response based on the search results from the Default ABC Retriever. This output contains the formatted answer to the user's query along with webpage source links.\n\n**Content Includes:**\n- Relevant information retrieved from the ABC knowledge base\n- Structured and formatted answer\n- **Webpage URLs extracted from the citation metadata**\n- **Clearly labeled source links at the end of the response**\n- Special indicator \"NO_RESULTS_FOUND_TIER_2\" if no relevant information is found\n\n**Link Format Requirements:**\n- Extract webpage URL from citation metadata\n- Display as: \"**Source:** [URL]\" or \"**Read more at:** [URL]\"\n- Ensure URLs are clickable hyperlinks\n- List multiple URLs if information comes from multiple sources\n- Place all source links in a dedicated section at the end of the response\n\n**Processing Logic:**\n- If response contains \"NO_RESULTS_FOUND_TIER_2\": Proceed to fallback message action\n- If response contains relevant information: Display answer with webpage links to user and end topic flow\n\n**Usage:** This output drives the conditional logic for the 3-tier search strategy and provides users with direct access to source webpages",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : true,
+      "copilotAction:isUsedByPlanner" : true,
+      "copilotAction:useHydratedPrompt" : false
+    },
+    "citations" : {
+      "title" : "Citations",
+      "description" : "Source citations from the Default ABC Retriever that support the information in the Prompt Response. Provides transparency and allows users to verify the source of information, including webpage URLs.\n\n**Content Includes:**\n- Document titles or names from the ABC knowledge base\n- Relevant excerpts or snippets from source documents\n- **Webpage URLs or links to original source materials**\n- Reference identifiers for traceability\n- Confidence scores or relevance indicators\n\n**Webpage Link Extraction:**\n- Citations should include the full webpage URL when available\n- Extract from metadata fields such as: url, source_url, web_url, link, or document_url\n- Prioritize official ABC NC website URLs (https://www.abc.nc.gov/*)\n- Ensure links are properly formatted and functional\n\n**Display Behavior:**\n- Only shown when Prompt Response contains actual results\n- Hidden when \"NO_RESULTS_FOUND_TIER_2\" is returned\n- Formatted according to the Citation Mode setting (detailed)\n- **Webpage links are prominently displayed and clickable**\n\n**Purpose:** Builds user trust by providing verifiable sources with direct access to original webpage content",
+      "lightning:type" : "@apexClassType/AiCopilot__GenAiCitationOutput",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : true,
+      "copilotAction:isUsedByPlanner" : true,
+      "copilotAction:useHydratedPrompt" : false
+    }
+  },
+  "lightning:type" : "lightning__objectType"
+}

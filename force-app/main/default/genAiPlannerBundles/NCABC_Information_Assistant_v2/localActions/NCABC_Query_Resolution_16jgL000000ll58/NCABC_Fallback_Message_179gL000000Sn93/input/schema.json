@@ -1,0 +1,21 @@
+{
+  "required" : [ "Input:RetrieverIdOrName", "Input:Query" ],
+  "unevaluatedProperties" : false,
+  "properties" : {
+    "Input:RetrieverIdOrName" : {
+      "title" : "RetrieverIdOrName",
+      "description" : "Not applicable for fallback message. This field can be left empty or set to \"N/A\" as the fallback action does not perform any knowledge base retrieval. It delivers a static, formatted message with alternative support options.\n\n**Value:** N/A\n**Purpose:** Placeholder field - not used in fallback message generation\n**Note:** This input is not utilized by the fallback action but may be required by the system configuration",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "Input:Query" : {
+      "title" : "Query",
+      "description" : "The original user query that will be displayed in the fallback message for context. This helps users understand what question could not be answered and allows them to consider rephrasing.",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : true
+    }
+  },
+  "lightning:type" : "lightning__objectType"
+}

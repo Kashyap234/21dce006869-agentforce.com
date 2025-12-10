@@ -1,0 +1,28 @@
+{
+  "required" : [ "Input:Query", "Input:RetrieverIdOrName" ],
+  "unevaluatedProperties" : false,
+  "properties" : {
+    "Input:Query" : {
+      "title" : "Query",
+      "description" : "The user's search query or question that will be searched in the Default ABC Retriever knowledge base. This should be the original user query passed from the conversation context to ensure consistency across all search tiers.",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : true
+    },
+    "Input:RetrieverIdOrName" : {
+      "title" : "RetrieverIdOrName",
+      "description" : "The unique identifier or name of the Default ABC Retriever knowledge base. This specifies which retriever to use for searching.\n\n**Value:** Default_abcretriver1_Retriever_1Cx_5Pp7635644d\n**Purpose:** Routes the search query to the correct ABC knowledge base\n**Note:** This value should remain constant and not be modified unless the retriever ID changes",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "citationMode" : {
+      "title" : "Citation Mode",
+      "description" : "Specifies how citations should be formatted and included with the search results. Controls the level of detail in source attribution.\n\n**Value:** detailed\n**Options:** \n- \"detailed\": Includes comprehensive citation information (recommended)\n- \"summary\": Provides basic citation information\n- \"none\": No citations included\n\n**Purpose:** Ensures transparency by providing source references for all information returned from the ABC Retriever",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    }
+  },
+  "lightning:type" : "lightning__objectType"
+}

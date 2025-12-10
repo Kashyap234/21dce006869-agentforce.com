@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GenAiPromptTemplate xmlns="http://soap.sforce.com/2006/04/metadata">
+    <activeVersionIdentifier>9I5BSznq4bUV2cTBntZfNe5/0/BQJkefjcYeeIY9yMI=_4</activeVersionIdentifier>
+    <developerName>NCABC_prompt_template</developerName>
+    <masterLabel>NCABC prompt template</masterLabel>
+    <templateVersions>
+        <content>###
+INSTRUCTIONS
+
+1. Analyze the query:
+ Carefully read and understand the user&apos;s question or issue from the QUESTION section.
+
+2. Search WEB:
+ Use Salesforce Agentforce&apos;s Web Search Retriever (sfdc_ai__WebRetrievalAction) to query live web data.
+ Limit all web search queries to only the domains https://abc2.nc.gov and https://www.abc.nc.gov,
+ ensuring that results are exclusively sourced from these two domains through prefiltering, context, or retriever configuration.
+
+3. Evaluate information:
+ Determine if the results from the web search, restricted to the specified domains, contain sufficient, relevant information to answer the QUESTION.
+
+4. Formulate response:
+ a) Identify the most relevant result(s) from the allowed domains and VERBATIM extract the URL(s) to set in the &lt;source_url&gt; field of the response JSON.
+  If no relevant result is found, set &lt;source_url&gt; to NONE.
+ b) Use the relevant result’s summary/snippet/content to generate a response that directly answers the user&apos;s question.
+  If the result contains a URL, always include this URL at the end of the textual response.
+  The complete response, including the URL, must be set as the &lt;generated_response&gt;.
+ c) If the user&apos;s request cannot be answered with the retrieved results, set &lt;source_url&gt; to NONE and &lt;generated_response&gt; to
+  &quot;Sorry, I can&apos;t find an answer based on the available web results.&quot;
+
+5. Refine and deliver:
+ Ensure your response is polite, professional, and concise.
+
+6. Review response:
+ Make sure that you have followed all of the above instructions.
+ Respond in the desired output format, and strictly use only the retrieved web search results
+ from https://abc2.nc.gov and https://www.abc.nc.gov domains to formulate your answer.
+
+ ###
+KNOWLEDGE:
+{!$EinsteinSearch:Default_abcretriver1_Retriever_1Cx_5Pp7635644d.results}
+
+ ###
+QUESTION:
+{!$Input:Query}
+</content>
+        <inputs>
+            <apiName>Query</apiName>
+            <definition>primitive://String</definition>
+            <referenceName>Input:Query</referenceName>
+            <required>true</required>
+        </inputs>
+        <inputs>
+            <apiName>RetrieverIdOrName</apiName>
+            <definition>primitive://String</definition>
+            <referenceName>Input:RetrieverIdOrName</referenceName>
+            <required>true</required>
+        </inputs>
+        <primaryModel>sfdc_ai__DefaultOpenAIGPT4OmniMini</primaryModel>
+        <status>Published</status>
+        <templateDataProviders>
+            <definition>invocable://getEinsteinRetrieverResults/Default_abcretriver1_Retriever_1Cx_5Pp7635644d</definition>
+            <description>Default retriever of semantic search abcretriver1</description>
+            <label>Default abcretriver1 Retriever</label>
+            <parameters>
+                <definition>primitive://String</definition>
+                <isRequired>true</isRequired>
+                <parameterName>searchText</parameterName>
+                <valueExpression>{!$Input:Query}</valueExpression>
+            </parameters>
+            <referenceName>EinsteinSearch:Default_abcretriver1_Retriever_1Cx_5Pp7635644d</referenceName>
+        </templateDataProviders>
+        <versionIdentifier>9I5BSznq4bUV2cTBntZfNe5/0/BQJkefjcYeeIY9yMI=_1</versionIdentifier>
+    </templateVersions>
+    <templateVersions>
+        <content>###
+INSTRUCTIONS
+
+1. Analyze the query:
+  Carefully read and understand the user&apos;s question from the QUESTION section below.
+
+2. Search Knowledge Base (Primary Source):
+  First, check if the answer exists in the KNOWLEDGE section which contains information from the NCABC documentation.
+  This is your PRIMARY and PREFERRED source of information.
+
+3. Evaluate Knowledge Base Results:
+  a) If the KNOWLEDGE section contains relevant information that answers the question:
+   - Extract the answer directly from the KNOWLEDGE content
+   - Include any relevant URLs mentioned in the knowledge base
+   - Set &lt;source_url&gt; to the URL from the knowledge base (if available)
+   - Proceed to step 5 to formulate the response
+  
+  b) If the KNOWLEDGE section does NOT contain sufficient information:
+   - Proceed to step 4 for web search
+
+4. Search Web (Secondary Source - Only if Knowledge Base insufficient):
+  Use Salesforce Agentforce&apos;s Web Search Retriever (sfdc_ai__WebRetrievalAction) to query live web data.
+  Limit all web search queries to ONLY the domains:
+  - https://abc2.nc.gov
+  - https://www.abc.nc.gov
+  Ensure that results are exclusively sourced from these two domains through prefiltering.
+
+5. Formulate Response:
+  a) If answer found in KNOWLEDGE section:
+   - Use the information VERBATIM from the knowledge base
+   - Extract any URLs mentioned and set in &lt;source_url&gt; field
+   - Include the URL at the end of your response text
+   - Set complete response in &lt;generated_response&gt;
+  
+  b) If answer found via WEB search (only after knowledge base check):
+   - Identify the most relevant result from the allowed domains
+   - Extract the URL(s) VERBATIM and set in &lt;source_url&gt; field
+   - Use the result&apos;s content to generate a response
+   - Always include the URL at the end of the textual response
+   - Set complete response in &lt;generated_response&gt;
+  
+  c) If NO answer found in either source:
+   - Set &lt;source_url&gt; to NONE
+   - Set &lt;generated_response&gt; to: &quot;I apologize, but I don&apos;t have specific information about your question in my current knowledge base. For immediate assistance, please visit https://www.abc.nc.gov or contact the ABC Commission directly. Is there anything else about ABC stores, permits, or regulations I can help you with?&quot;
+
+6. Response Guidelines:
+  - Always prioritize KNOWLEDGE base information over web search
+  - Be polite, professional, and concise
+  - When URLs are available, always include them in your response
+  - Maintain a helpful customer service tone
+  - Offer to assist with related questions when appropriate
+
+7. Review Response:
+  Verify that you have:
+  - Checked KNOWLEDGE section first
+  - Only used web search if knowledge base was insufficient
+  - Restricted web searches to specified domains only
+  - Included relevant URLs in the response
+  - Responded in the correct output format
+
+###
+KNOWLEDGE:
+{!$EinsteinSearch:Default_abcretriver1_Retriever_1Cx_5Pp7635644d.results}
+
+###
+QUESTION:
+{!$Input:Query}
+
+###
+OUTPUT FORMAT:
+Provide a direct, conversational answer that addresses the user&apos;s question. Include relevant URLs when available. Keep responses clear and helpful.
+</content>
+        <inputs>
+            <apiName>Query</apiName>
+            <definition>primitive://String</definition>
+            <referenceName>Input:Query</referenceName>
+            <required>true</required>
+        </inputs>
+        <inputs>
+            <apiName>RetrieverIdOrName</apiName>
+            <definition>primitive://String</definition>
+            <referenceName>Input:RetrieverIdOrName</referenceName>
+            <required>true</required>
+        </inputs>
+        <primaryModel>sfdc_ai__DefaultOpenAIGPT4OmniMini</primaryModel>
+        <status>Published</status>
+        <templateDataProviders>
+            <definition>invocable://getEinsteinRetrieverResults/Default_abcretriver1_Retriever_1Cx_5Pp7635644d</definition>
+            <description>Default retriever of semantic search abcretriver1</description>
+            <label>Default abcretriver1 Retriever</label>
+            <parameters>
+                <definition>primitive://String</definition>
+                <isRequired>true</isRequired>
+                <parameterName>searchText</parameterName>
+                <valueExpression>{!$Input:Query}</valueExpression>
+            </parameters>
+            <referenceName>EinsteinSearch:Default_abcretriver1_Retriever_1Cx_5Pp7635644d</referenceName>
+        </templateDataProviders>
+        <versionIdentifier>9I5BSznq4bUV2cTBntZfNe5/0/BQJkefjcYeeIY9yMI=_2</versionIdentifier>
+    </templateVersions>
+    <templateVersions>
+        <content>###
+INSTRUCTIONS
+
+1. Analyze the query:
+  Carefully read and understand the user&apos;s question from the QUESTION section below.
+
+2. Search Knowledge Base (Primary Source):
+  First, check if the answer exists in the KNOWLEDGE section which contains information from the NCABC documentation.
+  This is your PRIMARY and PREFERRED source of information.
+
+3. Evaluate Knowledge Base Results:
+  a) If the KNOWLEDGE section contains relevant information that answers the question:
+   - Extract the answer directly from the KNOWLEDGE content
+   - Include any relevant URLs mentioned in the knowledge base
+   - Set &lt;source_url&gt; to the URL from the knowledge base (if available)
+   - Proceed to step 5 to formulate the response
+  
+  b) If the KNOWLEDGE section does NOT contain sufficient information:
+   - Proceed to step 4 for web search
+
+4. Search Web (Secondary Source - Only if Knowledge Base insufficient):
+  Use Salesforce Agentforce&apos;s Web Search Retriever (sfdc_ai__WebRetrievalAction) to query live web data.
+  Limit all web search queries to ONLY the domains:
+  - https://abc2.nc.gov
+  - https://www.abc.nc.gov
+  Ensure that results are exclusively sourced from these two domains through prefiltering.
+
+5. Formulate Response:
+  a) If answer found in KNOWLEDGE section:
+   - Use the information VERBATIM from the knowledge base
+   - Extract any URLs mentioned and set in &lt;source_url&gt; field
+   - Include the URL at the end of your response text
+   - Set complete response in &lt;generated_response&gt;
+  
+  b) If answer found via WEB search (only after knowledge base check):
+   - Identify the most relevant result from the allowed domains
+   - Extract the URL(s) VERBATIM and set in &lt;source_url&gt; field
+   - Use the result&apos;s content to generate a response
+   - Always include the URL at the end of the textual response
+   - Set complete response in &lt;generated_response&gt;
+  
+  c) If NO answer found in either source:
+   - Set &lt;source_url&gt; to NONE
+   - Set &lt;generated_response&gt; to: &quot;I apologize, but I don&apos;t have specific information about your question in my current knowledge base. For immediate assistance, please visit https://www.abc.nc.gov or contact the ABC Commission directly. Is there anything else about ABC stores, permits, or regulations I can help you with?&quot;
+
+6. Response Guidelines:
+  - Always prioritize KNOWLEDGE base information over web search
+  - Be polite, professional, and concise
+  - When URLs are available, always include them in your response
+  - Maintain a helpful customer service tone
+  - Offer to assist with related questions when appropriate
+
+7. Review Response:
+  Verify that you have:
+  - Checked KNOWLEDGE section first
+  - Only used web search if knowledge base was insufficient
+  - Restricted web searches to specified domains only
+  - Included relevant URLs in the response
+  - Responded in the correct output format
+
+###
+KNOWLEDGE:
+{!$EinsteinSearch:File_NCABC_Information_Assistant_Library_1Cx_5Pp1db58e2c.results}
+
+###
+QUESTION:
+{!$Input:Query}
+
+###
+OUTPUT FORMAT:
+Provide a direct, conversational answer that addresses the user&apos;s question. Include relevant URLs when available. Keep responses clear and helpful.
+</content>
+        <inputs>
+            <apiName>RetrieverIdOrName</apiName>
+            <definition>primitive://String</definition>
+            <referenceName>Input:RetrieverIdOrName</referenceName>
+            <required>true</required>
+        </inputs>
+        <inputs>
+            <apiName>Query</apiName>
+            <definition>primitive://String</definition>
+            <referenceName>Input:Query</referenceName>
+            <required>true</required>
+        </inputs>
+        <primaryModel>sfdc_ai__DefaultOpenAIGPT4OmniMini</primaryModel>
+        <status>Published</status>
+        <templateDataProviders>
+            <definition>invocable://getEinsteinRetrieverResults/File_NCABC_Information_Assistant_Library_1Cx_5Pp1db58e2c</definition>
+            <description>File_NCABC_Information_Assistant_Library</description>
+            <label>File_NCABC_Information_Assistant_Library</label>
+            <parameters>
+                <definition>primitive://String</definition>
+                <isRequired>true</isRequired>
+                <parameterName>searchText</parameterName>
+                <valueExpression>{!$Input:Query}</valueExpression>
+            </parameters>
+            <referenceName>EinsteinSearch:File_NCABC_Information_Assistant_Library_1Cx_5Pp1db58e2c</referenceName>
+        </templateDataProviders>
+        <versionIdentifier>9I5BSznq4bUV2cTBntZfNe5/0/BQJkefjcYeeIY9yMI=_4</versionIdentifier>
+    </templateVersions>
+    <type>einstein_gpt__knowledgeAnswers</type>
+    <visibility>Global</visibility>
+</GenAiPromptTemplate>

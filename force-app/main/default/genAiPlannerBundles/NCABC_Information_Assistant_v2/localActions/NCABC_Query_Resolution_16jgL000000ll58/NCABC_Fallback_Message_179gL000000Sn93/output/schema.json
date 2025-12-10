@@ -1,0 +1,15 @@
+{
+  "unevaluatedProperties" : false,
+  "properties" : {
+    "promptResponse" : {
+      "title" : "Prompt Response",
+      "description" : "The formatted fallback message that provides guidance, alternative options, and the official ABC NC website link when no information is found in either knowledge base.\n\n**Message Includes:**\n- Acknowledgment of the user's query\n- Apology for not finding information\n- Direct link to official website: https://www.abc.nc.gov/\n- Alternative actions the user can take:\n  * Rephrasing the question\n  * Visiting the official website\n  * Contacting support\n  * Checking FAQ section\n- Encouraging closing question to continue engagement\n\n**Tone:** Professional, empathetic, helpful, and solution-oriented\n\n**Format:** Structured text with bullet points, clear sections, and prominent website link placement\n\n**Purpose:** Ensures users leave with actionable next steps even when automated search fails",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isDisplayable" : true,
+      "copilotAction:isUsedByPlanner" : true,
+      "copilotAction:useHydratedPrompt" : false
+    }
+  },
+  "lightning:type" : "lightning__objectType"
+}

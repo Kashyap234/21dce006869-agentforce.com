@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <label>Default</label>
+    <protected>false</protected>
+    <values>
+        <field>Client_ID__c</field>
+        <value xsi:type="xsd:string">3MVG9dAEux2v1sLsZdgUt_m24mCFww.XjrAWpzIhuUz8N9i5XCL_oyiOXlVAyhHmPha_ENyUwYH46ylJ1VZ9Q</value>
+    </values>
+    <values>
+        <field>Client_Secret__c</field>
+        <value xsi:type="xsd:string">2182C98F72F1E7F645AF8EAEFA7BA24CAE05359C1C3AD5332BD9C23B991AE6B1</value>
+    </values>
+    <values>
+        <field>Telegram_Bot_Token__c</field>
+        <value xsi:type="xsd:string">8224121064:AAELPLu61zbSN52hhvhiBvPbZs27o1U4iZQ</value>
+    </values>
+</CustomMetadata>

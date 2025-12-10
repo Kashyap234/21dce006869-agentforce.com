@@ -1,0 +1,28 @@
+{
+  "required" : [ "Input:Query", "Input:RetrieverIdOrName" ],
+  "unevaluatedProperties" : false,
+  "properties" : {
+    "Input:Query" : {
+      "title" : "Query",
+      "description" : "The user's question or request about NC ABC Stores. This is the primary input that drives the search and response generation. The query should contain the customer's complete question about store locations, hours, products, policies, or any FAQ-related topic.",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : true
+    },
+    "Input:RetrieverIdOrName" : {
+      "title" : "RetrieverIdOrName",
+      "description" : "The unique identifier or name of the retriever (knowledge base) that contains NC ABC Stores information. This specifies which data source to search for relevant information. Use the API name or ID of your configured retriever that indexes ABC store data, FAQs, and policies.",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "citationMode" : {
+      "title" : "Citation Mode",
+      "description" : "Select Citation Mode",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    }
+  },
+  "lightning:type" : "lightning__objectType"
+}

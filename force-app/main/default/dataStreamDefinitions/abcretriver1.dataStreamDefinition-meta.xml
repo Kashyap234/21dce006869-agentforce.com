@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DataStreamDefinition xmlns="http://soap.sforce.com/2006/04/metadata">
+    <areHeadersIncludedInFile>true</areHeadersIncludedInFile>
+    <bulkIngest>true</bulkIngest>
+    <creationType>System</creationType>
+    <dataConnector>abcdepthcrawler1</dataConnector>
+    <dataConnectorType>uEkWebsite</dataConnectorType>
+    <dataPlatformDataSetItemName>CONNECTORSFRAMEWORK</dataPlatformDataSetItemName>
+    <dataSource>uEkWebsite_abcdepthcrawler1</dataSource>
+    <isLimitedToNewFiles>true</isLimitedToNewFiles>
+    <isMissingFileFailure>false</isMissingFileFailure>
+    <masterLabel>abcretriver1_ds</masterLabel>
+    <mktDataLakeObject>abcretriver1__dll</mktDataLakeObject>
+    <mktDataTranObject>abcretriver1</mktDataTranObject>
+    <parameters>
+        <fullName>abcretriver1_crawlDepth</fullName>
+        <paramName>crawlDepth</paramName>
+        <value>1</value>
+    </parameters>
+</DataStreamDefinition>

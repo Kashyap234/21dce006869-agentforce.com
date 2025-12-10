@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GenAiPromptTemplate xmlns="http://soap.sforce.com/2006/04/metadata">
+    <activeVersionIdentifier>9I5BSznq4bUV2cTBntZfNe5/0/BQJkefjcYeeIY9yMI=_2</activeVersionIdentifier>
+    <developerName>ABC_Retriever_Search_Template</developerName>
+    <masterLabel>ABC_Retriever_Search_Template</masterLabel>
+    <templateVersions>
+        <content>You are the NCABC Information Assistant. The NCABC Information Library did not contain relevant information for this query. Now searching the Default ABC Retriever as a secondary source.
+
+**User Query:** {!$Input:Query}
+
+**Search Results from Default ABC Retriever:**
+{!$EinsteinSearch:Default_abcretriver1_Retriever_1Cx_5Pp7635644d.results}
+
+**Instructions:**
+1. Carefully analyze the search results from the Default ABC Retriever
+2. If relevant information is found in the search results:
+  - Provide a clear, accurate, and helpful response based on the search results
+  - Cite specific information from the knowledge base
+  - Use a professional and friendly tone
+  - Structure your response in an easy-to-understand format
+  - Optionally mention: &quot;This information was found in our general ABC knowledge base.&quot;
+3. If NO relevant information is found in the search results:
+  - Respond with exactly: &quot;NO_RESULTS_FOUND_TIER_2&quot;
+  - Do not provide any additional information
+  - Do not make up or assume information
+
+**Response Guidelines:**
+- Be concise but comprehensive
+- Use bullet points or numbered lists when appropriate
+- If the information is partial, acknowledge what you found and what might need clarification
+- Always prioritize accuracy over completeness
+- Maintain consistency with the NCABC brand voice
+</content>
+        <inputs>
+            <apiName>Query</apiName>
+            <definition>primitive://String</definition>
+            <referenceName>Input:Query</referenceName>
+            <required>true</required>
+        </inputs>
+        <inputs>
+            <apiName>RetrieverIdOrName</apiName>
+            <definition>primitive://String</definition>
+            <referenceName>Input:RetrieverIdOrName</referenceName>
+            <required>true</required>
+        </inputs>
+        <primaryModel>sfdc_ai__DefaultOpenAIGPT4OmniMini</primaryModel>
+        <status>Published</status>
+        <templateDataProviders>
+            <definition>invocable://getEinsteinRetrieverResults/Default_abcretriver1_Retriever_1Cx_5Pp7635644d</definition>
+            <description>Default retriever of semantic search abcretriver1</description>
+            <label>Default abcretriver1 Retriever</label>
+            <parameters>
+                <definition>primitive://String</definition>
+                <isRequired>true</isRequired>
+                <parameterName>searchText</parameterName>
+                <valueExpression>{!$Input:Query}</valueExpression>
+            </parameters>
+            <referenceName>EinsteinSearch:Default_abcretriver1_Retriever_1Cx_5Pp7635644d</referenceName>
+        </templateDataProviders>
+        <versionIdentifier>9I5BSznq4bUV2cTBntZfNe5/0/BQJkefjcYeeIY9yMI=_1</versionIdentifier>
+    </templateVersions>
+    <templateVersions>
+        <content>You are the NCABC Information Assistant. The NCABC Information Library did not contain relevant information for this query. Now searching the Default ABC Retriever as a secondary source.
+
+**User Query:** 
+{!$Input:Query}
+
+**Search Results from Default ABC Retriever:**
+{!$EinsteinSearch:Default_abcretriver1_Retriever_1Cx_5Pp7635644d.results}
+
+**Instructions:**
+1. Carefully analyze the search results from the Default ABC Retriever
+2. If relevant information is found in the search results:
+  - Provide a clear, accurate, and helpful response based on the search results
+  - Use a professional and friendly tone
+  - Structure your response in an easy-to-understand format
+  - **IMPORTANT: Include the source webpage link(s) at the end of your response**
+  - Format links as: &quot;**Source:** [webpage URL]&quot; or &quot;**Read more at:** [webpage URL]&quot;
+  - If multiple sources are used, list all relevant webpage links
+  - Optionally mention: &quot;This information was found in our general ABC knowledge base.&quot;
+3. If NO relevant information is found in the search results:
+  - Respond with exactly: &quot;NO_RESULTS_FOUND_TIER_2&quot;
+  - Do not provide any additional information
+  - Do not make up or assume information
+
+**Response Format Example:**
+[Your detailed answer here based on search results]
+
+**Source Links:**
+- [Webpage URL 1]
+- [Webpage URL 2]
+(Include all relevant source URLs from the search results)
+
+**Response Guidelines:**
+- Be concise but comprehensive
+- Use bullet points or numbered lists when appropriate
+- **Always extract and include the webpage URL from the citation metadata**
+- If the information is partial, acknowledge what you found and what might need clarification
+- Always prioritize accuracy over completeness
+- Maintain consistency with the NCABC brand voice
+- Make URLs clickable and clearly labeled
+</content>
+        <inputs>
+            <apiName>Query</apiName>
+            <definition>primitive://String</definition>
+            <referenceName>Input:Query</referenceName>
+            <required>true</required>
+        </inputs>
+        <inputs>
+            <apiName>RetrieverIdOrName</apiName>
+            <definition>primitive://String</definition>
+            <referenceName>Input:RetrieverIdOrName</referenceName>
+            <required>true</required>
+        </inputs>
+        <primaryModel>sfdc_ai__DefaultOpenAIGPT4OmniMini</primaryModel>
+        <status>Published</status>
+        <templateDataProviders>
+            <definition>invocable://getEinsteinRetrieverResults/Default_abcretriver1_Retriever_1Cx_5Pp7635644d</definition>
+            <description>Default retriever of semantic search abcretriver1</description>
+            <label>Default abcretriver1 Retriever</label>
+            <parameters>
+                <definition>primitive://String</definition>
+                <isRequired>true</isRequired>
+                <parameterName>searchText</parameterName>
+                <valueExpression>{!$Input:Query}</valueExpression>
+            </parameters>
+            <referenceName>EinsteinSearch:Default_abcretriver1_Retriever_1Cx_5Pp7635644d</referenceName>
+        </templateDataProviders>
+        <versionIdentifier>9I5BSznq4bUV2cTBntZfNe5/0/BQJkefjcYeeIY9yMI=_2</versionIdentifier>
+    </templateVersions>
+    <type>einstein_gpt__knowledgeAnswers</type>
+    <visibility>Global</visibility>
+</GenAiPromptTemplate>

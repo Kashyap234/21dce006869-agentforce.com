@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GenAiPromptTemplate xmlns="http://soap.sforce.com/2006/04/metadata">
+    <activeVersionIdentifier>9I5BSznq4bUV2cTBntZfNe5/0/BQJkefjcYeeIY9yMI=_1</activeVersionIdentifier>
+    <developerName>NCABC_Library_Search_Template</developerName>
+    <masterLabel>NCABC_Library_Search_Template</masterLabel>
+    <templateVersions>
+        <content>You are the NCABC Information Assistant. Your task is to search the NCABC Information Library and provide accurate answers to user queries.
+
+**User Query:** 
+{!$Input:Query}
+
+**Search Results from NCABC Information Library:**
+{!$EinsteinSearch:File_NCABC_Information_Assistant_Library_1Cx_5Pp1db58e2c.results}
+
+**Instructions:**
+1. Carefully analyze the search results from the NCABC Information Library
+2. If relevant information is found in the search results:
+  - Provide a clear, accurate, and helpful response based on the search results
+  - Cite specific information from the knowledge base
+  - Use a professional and friendly tone
+  - Structure your response in an easy-to-understand format
+3. If NO relevant information is found in the search results:
+  - Respond with exactly: &quot;NO_RESULTS_FOUND_TIER_1&quot;
+  - Do not provide any additional information
+  - Do not make up or assume information
+
+**Response Guidelines:**
+- Be concise but comprehensive
+- Use bullet points or numbered lists when appropriate
+- If the information is partial, acknowledge what you found and what might need clarification
+- Always prioritize accuracy over completeness
+
+</content>
+        <inputs>
+            <apiName>Query</apiName>
+            <definition>primitive://String</definition>
+            <referenceName>Input:Query</referenceName>
+            <required>true</required>
+        </inputs>
+        <inputs>
+            <apiName>RetrieverIdOrName</apiName>
+            <definition>primitive://String</definition>
+            <referenceName>Input:RetrieverIdOrName</referenceName>
+            <required>true</required>
+        </inputs>
+        <primaryModel>sfdc_ai__DefaultOpenAIGPT4OmniMini</primaryModel>
+        <status>Published</status>
+        <templateDataProviders>
+            <definition>invocable://getEinsteinRetrieverResults/File_NCABC_Information_Assistant_Library_1Cx_5Pp1db58e2c</definition>
+            <description>File_NCABC_Information_Assistant_Library</description>
+            <label>File_NCABC_Information_Assistant_Library</label>
+            <parameters>
+                <definition>primitive://String</definition>
+                <isRequired>true</isRequired>
+                <parameterName>searchText</parameterName>
+                <valueExpression>{!$Input:Query}</valueExpression>
+            </parameters>
+            <referenceName>EinsteinSearch:File_NCABC_Information_Assistant_Library_1Cx_5Pp1db58e2c</referenceName>
+        </templateDataProviders>
+        <versionIdentifier>9I5BSznq4bUV2cTBntZfNe5/0/BQJkefjcYeeIY9yMI=_1</versionIdentifier>
+    </templateVersions>
+    <type>einstein_gpt__knowledgeAnswers</type>
+    <visibility>Global</visibility>
+</GenAiPromptTemplate>

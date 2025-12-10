@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <label>Default</label>
+    <protected>false</protected>
+    <values>
+        <field>API_Key__c</field>
+        <value xsi:type="xsd:string">AIzaSyA768n8aFP4991BjrdJkv4gdmVwk84C5Sk</value>
+    </values>
+    <values>
+        <field>Endpoint__c</field>
+        <value xsi:type="xsd:string">ATATT3xFfGF0jKaV4qFcIh_Nr2Hxic2X67V74FkYmNw3tghiznxofhw1riOE8mlEnuhBcsm0kWJEdJzZcSn064wgu06YVZAdwqSVSckK6ahBB4xyTzBCYAvPkAffR1v3hhO6rggm8zPmPYbZvW8Vw88t8PPI3YjM4w5MewFM6eu1PuT_jX89fWk=9D530D8E</value>
+    </values>
+</CustomMetadata>
