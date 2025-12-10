@@ -10,7 +10,7 @@
  * @date 2024
  */
 @RestResource(urlMapping='/jira/webhook')
-global with sharing class JiraWebhookEndpoint {
+global without sharing class JiraWebhookEndpoint {
     
     @HttpPost
     global static WebhookResponse handleWebhook() {
@@ -37,6 +37,9 @@ global with sharing class JiraWebhookEndpoint {
             // Route to appropriate handler
             if(webhookEvent == 'jira:issue_updated' || webhookEvent == 'issue_updated') {
                 return handleIssueUpdated(payload, res);
+            }
+            else if(webhookEvent == 'jira:attachment_created' || webhookEvent == 'attachment_created') {
+                return handleDirectAttachmentEvent(payload, res);
             } 
             else if(webhookEvent == 'jira:issue_comment_created' || webhookEvent == 'comment_created') {
                 return handleCommentCreated(payload, res);
@@ -169,6 +172,67 @@ global with sharing class JiraWebhookEndpoint {
             
         } catch(Exception e) {
             System.debug(LoggingLevel.ERROR, 'Error handling attachment: ' + e.getMessage());
+            System.debug(LoggingLevel.ERROR, 'Stack trace: ' + e.getStackTraceString());
+            res.statusCode = 500;
+            return new WebhookResponse(false, 'Error: ' + e.getMessage());
+        }
+    }
+
+    /**
+     * Handles direct attachment_created events
+     * Added Null Check to prevent crashes when 'issue' data is missing
+     */
+    private static WebhookResponse handleDirectAttachmentEvent(Map<String, Object> payload, RestResponse res) {
+        try {
+            // 1. SAFEGUARD: Check if 'issue' exists before accessing it
+            if (!payload.containsKey('issue') || payload.get('issue') == null) {
+                String msg = 'Skipping attachment_created event: Payload missing "issue" object. Relying on issue_updated event instead.';
+                System.debug(LoggingLevel.WARN, msg);
+                res.statusCode = 200; // Respond 200 to stop Jira from retrying this unusable event
+                return new WebhookResponse(true, msg);
+            }
+
+            // 2. Get Jira Key
+            Map<String, Object> issue = (Map<String, Object>) payload.get('issue');
+            String jiraKey = (String) issue.get('key');
+            
+            System.debug('Processing direct attachment event for: ' + jiraKey);
+    
+            // 3. Find the Case
+            Case targetCase = findCaseByJiraKey(jiraKey);
+            if(targetCase == null) {
+                String msg = 'ERROR: No Case found with Jira Key: ' + jiraKey;
+                System.debug(LoggingLevel.ERROR, msg);
+                // Tip: Ensure you have a Case in Salesforce with Jira_Issue_Key__c = jiraKey
+                res.statusCode = 200; 
+                return new WebhookResponse(false, msg);
+            }
+    
+            // 4. Extract attachment details
+            Map<String, Object> attachment = (Map<String, Object>) payload.get('attachment');
+            if (attachment == null) {
+                 return new WebhookResponse(true, 'No attachment data found');
+            }
+    
+            String attachmentId = (String) attachment.get('id');
+            String filename = (String) attachment.get('filename');
+            String contentUrl = (String) attachment.get('content');
+    
+            System.debug('Queueing sync for: ' + filename + ' (ID: ' + attachmentId + ')');
+    
+            // 5. Queue the download
+            System.enqueueJob(new AttachmentSyncQueueable(
+                targetCase.Id, 
+                attachmentId, 
+                contentUrl, 
+                filename
+            ));
+    
+            res.statusCode = 200;
+            return new WebhookResponse(true, 'Attachment sync queued: ' + filename);
+    
+        } catch(Exception e) {
+            System.debug(LoggingLevel.ERROR, 'Error in direct attachment handler: ' + e.getMessage());
             System.debug(LoggingLevel.ERROR, 'Stack trace: ' + e.getStackTraceString());
             res.statusCode = 500;
             return new WebhookResponse(false, 'Error: ' + e.getMessage());

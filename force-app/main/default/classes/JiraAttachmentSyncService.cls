@@ -93,14 +93,36 @@ public class JiraAttachmentSyncService {
         }
     }
     
+    // /**
+    //  * Downloads file content from Jira
+    //  */
+    // private static Blob downloadFromJira(String attachmentUrl) {
+    //     HttpRequest req = new HttpRequest();
+        
+    //     // Use the content URL directly (it already includes the full path)
+    //     // Example: https://your-domain.atlassian.net/rest/api/2/attachment/content/10033
+    //     req.setEndpoint('callout:Jira_Cloud' + attachmentUrl.substringAfter('atlassian.net'));
+    //     req.setMethod('GET');
+    //     req.setTimeout(TIMEOUT_MS);
+        
+    //     Http http = new Http();
+    //     HttpResponse res = http.send(req);
+        
+    //     if(res.getStatusCode() == 200) {
+    //         return res.getBodyAsBlob();
+    //     } else {
+    //         System.debug(LoggingLevel.ERROR, 'Jira download failed. Status: ' + res.getStatusCode());
+    //         return null;
+    //     }
+    // }
     /**
-     * Downloads file content from Jira
+     * Downloads file content from Jira (Updated to handle 303 Redirects)
      */
     private static Blob downloadFromJira(String attachmentUrl) {
         HttpRequest req = new HttpRequest();
         
-        // Use the content URL directly (it already includes the full path)
-        // Example: https://your-domain.atlassian.net/rest/api/2/attachment/content/10033
+        // 1. Initial Request to Jira via Named Credential
+        // This request authenticates with Jira
         req.setEndpoint('callout:Jira_Cloud' + attachmentUrl.substringAfter('atlassian.net'));
         req.setMethod('GET');
         req.setTimeout(TIMEOUT_MS);
@@ -108,14 +130,35 @@ public class JiraAttachmentSyncService {
         Http http = new Http();
         HttpResponse res = http.send(req);
         
+        // 2. Handle Redirects (302, 303, 307)
+        // Jira returns 303 to redirect us to the actual file storage (e.g., AWS S3)
+        if (res.getStatusCode() >= 300 && res.getStatusCode() <= 307) {
+            String redirectUrl = res.getHeader('Location');
+            
+            if (String.isNotBlank(redirectUrl)) {
+                System.debug('Jira redirected to: ' + redirectUrl);
+                
+                // Make a second request to the new URL
+                // IMPORTANT: Do NOT use the Named Credential here. 
+                // The redirect URL is pre-signed and works without extra auth.
+                HttpRequest newReq = new HttpRequest();
+                newReq.setEndpoint(redirectUrl);
+                newReq.setMethod('GET');
+                newReq.setTimeout(TIMEOUT_MS);
+                
+                res = http.send(newReq);
+            }
+        }
+        
+        // 3. Final Check
         if(res.getStatusCode() == 200) {
             return res.getBodyAsBlob();
         } else {
-            System.debug(LoggingLevel.ERROR, 'Jira download failed. Status: ' + res.getStatusCode());
+            System.debug(LoggingLevel.ERROR, 'Jira download failed. Final Status: ' + res.getStatusCode());
+            System.debug(LoggingLevel.ERROR, 'Response Body: ' + res.getBody());
             return null;
         }
     }
-    
     /**
      * Uploads file to Salesforce as ContentVersion
      */
@@ -127,7 +170,7 @@ public class JiraAttachmentSyncService {
         cv.VersionData = fileData;
         cv.IsMajorVersion = true;
         cv.Origin = 'H'; // Uploaded by user (vs 'C' for Chatter)
-        
+        cv.FirstPublishLocationId = caseId;
         insert cv;
         
         // Query to get ContentDocumentId
