@@ -1,10 +1,10 @@
 /**
- * JiraWebhookEndpoint - FIXED VERSION
+ * JiraWebhookEndpoint - FIXED Case Lookup Version
  * 
  * Key Fixes:
- * 1. Better Case lookup with debugging
- * 2. Handles attachment deletions
- * 3. More robust error handling
+ * 1. Improved Case lookup with trimming and case-insensitive search
+ * 2. Better error messages showing BOTH the Jira key we're searching for AND what exists in SF
+ * 3. Handles edge cases like whitespace
  * 
  * @author Your Name
  * @date 2024
@@ -47,7 +47,6 @@ global with sharing class JiraWebhookEndpoint {
             else if(webhookEvent == 'jira:issue_comment_deleted' || webhookEvent == 'comment_deleted') {
                 return handleCommentDeleted(payload, res);
             }
-
             else {
                 String msg = 'Event type not handled: ' + webhookEvent;
                 System.debug(LoggingLevel.WARN, msg);
@@ -63,7 +62,7 @@ global with sharing class JiraWebhookEndpoint {
     }
     
     /**
-     * ENHANCED: Handles issue updates (status changes, attachments, deletions)
+     * Handles issue updates (status changes, attachments, deletions)
      */
     private static WebhookResponse handleIssueUpdated(Map<String, Object> payload, RestResponse res) {
         Map<String, Object> issue = (Map<String, Object>) payload.get('issue');
@@ -99,7 +98,7 @@ global with sharing class JiraWebhookEndpoint {
     }
     
     /**
-     * NEW: Handles attachment additions from Jira
+     * Handles attachment additions from Jira
      */
     private static WebhookResponse handleAttachmentAdded(Map<String, Object> payload, String jiraKey, RestResponse res) {
         System.debug('Processing attachment addition for: ' + jiraKey);
@@ -109,13 +108,17 @@ global with sharing class JiraWebhookEndpoint {
             Case targetCase = findCaseByJiraKey(jiraKey);
             
             if(targetCase == null) {
-                String msg = 'No Case found with Jira Key: ' + jiraKey;
-                System.debug(LoggingLevel.WARN, msg);
+                String msg = 'ERROR: No Case found with Jira Key: ' + jiraKey;
+                System.debug(LoggingLevel.ERROR, msg);
+                
+                // Show what DOES exist in Salesforce for debugging
+                debugExistingCases();
+                
                 res.statusCode = 200; // Return 200 so Jira doesn't retry
-                return new WebhookResponse(true, msg);
+                return new WebhookResponse(false, msg);
             }
             
-            System.debug('Found Case: ' + targetCase.CaseNumber + ' (ID: ' + targetCase.Id + ')');
+            System.debug('✓ Found Case: ' + targetCase.CaseNumber + ' (ID: ' + targetCase.Id + ')');
             
             // Get attachment info
             Map<String, Object> issue = (Map<String, Object>) payload.get('issue');
@@ -151,7 +154,7 @@ global with sharing class JiraWebhookEndpoint {
             String filename = (String) newAttachment.get('filename');
             String contentUrl = (String) newAttachment.get('content');
             
-            System.debug('New attachment: ' + filename + ' (ID: ' + attachmentId + ')');
+            System.debug('✓ New attachment: ' + filename + ' (ID: ' + attachmentId + ')');
             
             // Queue the sync
             System.enqueueJob(new AttachmentSyncQueueable(
@@ -166,13 +169,14 @@ global with sharing class JiraWebhookEndpoint {
             
         } catch(Exception e) {
             System.debug(LoggingLevel.ERROR, 'Error handling attachment: ' + e.getMessage());
+            System.debug(LoggingLevel.ERROR, 'Stack trace: ' + e.getStackTraceString());
             res.statusCode = 500;
             return new WebhookResponse(false, 'Error: ' + e.getMessage());
         }
     }
     
     /**
-     * NEW: Handles attachment deletions from Jira
+     * Handles attachment deletions from Jira
      */
     private static WebhookResponse handleAttachmentDeleted(Map<String, Object> payload, String jiraKey, RestResponse res) {
         System.debug('Processing attachment deletion for: ' + jiraKey);
@@ -237,38 +241,78 @@ global with sharing class JiraWebhookEndpoint {
     }
     
     /**
-     * FIXED: Better Case lookup with debugging
+     * FIXED: Improved Case lookup with better error handling
      */
     private static Case findCaseByJiraKey(String jiraKey) {
-        System.debug('Looking for Case with Jira_Issue_Key__c = ' + jiraKey);
+        // Clean the Jira key
+        String cleanJiraKey = jiraKey != null ? jiraKey.trim() : '';
         
+        System.debug('=== CASE LOOKUP DEBUG ===');
+        System.debug('Searching for Jira Key: "' + cleanJiraKey + '"');
+        System.debug('Length: ' + cleanJiraKey.length() + ' characters');
+        
+        // Try exact match first
         List<Case> cases = [
             SELECT Id, CaseNumber, Jira_Issue_Key__c
             FROM Case 
-            WHERE Jira_Issue_Key__c = :jiraKey 
+            WHERE Jira_Issue_Key__c = :cleanJiraKey
             LIMIT 1
         ];
         
-        System.debug('Query returned ' + cases.size() + ' cases');
+        System.debug('Exact match query returned: ' + cases.size() + ' cases');
         
         if(!cases.isEmpty()) {
-            System.debug('Found Case: ' + cases[0].CaseNumber + ' with key: ' + cases[0].Jira_Issue_Key__c);
+            System.debug('✓ Found Case: ' + cases[0].CaseNumber);
             return cases[0];
         }
         
-        // Additional debugging: Check if the issue is whitespace/case-sensitivity
-        List<Case> allCases = [
+        // If no exact match, try case-insensitive search
+        System.debug('Trying case-insensitive search...');
+        
+        List<Case> allCasesWithJiraKey = [
             SELECT Id, CaseNumber, Jira_Issue_Key__c
             FROM Case 
             WHERE Jira_Issue_Key__c != null
-            LIMIT 10
+            LIMIT 100
         ];
-        System.debug('Sample of Cases with Jira keys: ' + allCases);
         
+        System.debug('Found ' + allCasesWithJiraKey.size() + ' cases with Jira keys:');
+        
+        for(Case c : allCasesWithJiraKey) {
+            String existingKey = c.Jira_Issue_Key__c != null ? c.Jira_Issue_Key__c.trim() : '';
+            System.debug('  - Case ' + c.CaseNumber + ': "' + existingKey + '" (Length: ' + existingKey.length() + ')');
+            
+            // Try case-insensitive match
+            if(existingKey.equalsIgnoreCase(cleanJiraKey)) {
+                System.debug('✓ Found case-insensitive match!');
+                return c;
+            }
+        }
+        
+        System.debug('✗ NO MATCH FOUND');
         return null;
     }
+    
     /**
-     * NEW: Handles comment deletion from Jira
+     * Helper: Debug what Cases exist in Salesforce
+     */
+    private static void debugExistingCases() {
+        List<Case> recentCases = [
+            SELECT Id, CaseNumber, Jira_Issue_Key__c, Status, CreatedDate
+            FROM Case 
+            WHERE Jira_Issue_Key__c != null
+            ORDER BY CreatedDate DESC
+            LIMIT 10
+        ];
+        
+        System.debug('=== RECENT CASES WITH JIRA KEYS ===');
+        for(Case c : recentCases) {
+            System.debug('Case ' + c.CaseNumber + ': Jira Key = "' + c.Jira_Issue_Key__c + '"');
+        }
+    }
+    
+    /**
+     * Handles comment deletion from Jira
      */
     private static WebhookResponse handleCommentDeleted(Map<String, Object> payload, RestResponse res) {
         Map<String, Object> issue = (Map<String, Object>) payload.get('issue');
@@ -292,7 +336,7 @@ global with sharing class JiraWebhookEndpoint {
         return new WebhookResponse(true, result);
     }
     
-        /**
+    /**
      * Handles new comment creation
      */
     private static WebhookResponse handleCommentCreated(Map<String, Object> payload, RestResponse res) {
@@ -359,9 +403,8 @@ global with sharing class JiraWebhookEndpoint {
         res.statusCode = 200;
         return new WebhookResponse(true, result);
     }
-
-
-        /**
+    
+    /**
      * Extracts comment text - handles both plain text and ADF format
      */
     private static String extractCommentText(Map<String, Object> comment) {
@@ -460,11 +503,8 @@ global with sharing class JiraWebhookEndpoint {
         return null;
     }
     
-    // [Keep all other existing methods: handleCommentCreated, handleCommentUpdated, 
-    //  validateAuthentication, isStatusChanged, isAttachmentAdded, etc.]
-    
     /**
-     * NEW: Checks if attachment was deleted
+     * Checks if attachment was deleted
      */
     private static Boolean isAttachmentDeleted(Map<String, Object> payload) {
         Map<String, Object> changelog = (Map<String, Object>) payload.get('changelog');
@@ -548,8 +588,6 @@ global with sharing class JiraWebhookEndpoint {
         
         return isValid;
     }
-    
-    // Keep existing comment handlers and other methods...
     
     global class WebhookResponse {
         public Boolean success;
