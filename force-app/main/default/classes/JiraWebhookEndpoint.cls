@@ -1,12 +1,9 @@
 /**
- * JiraWebhookEndpoint - FIXED Attachment Deletion
- * 
- * Key Fixes:
- * 1. Better file matching (handles extensions properly)
- * 2. More detailed logging
- * 3. Prevents recursion during deletion
- * 
- * @author Your Name
+ * JiraWebhookEndpoint - FIXED for Guest User File Deletion
+ * * Key Fix:
+ * 1. Added fallback query to ContentVersion in deleteFileFromSalesforce
+ * (Fixes "No files found" error for Guest Users)
+ * * @author Your Name
  * @date 2024
  */
 @RestResource(urlMapping='/jira/webhook')
@@ -68,7 +65,7 @@ global without sharing class JiraWebhookEndpoint {
     }
     
     /**
-     * NEW: Handles direct attachment_deleted events
+     * Handles direct attachment_deleted events
      */
     private static WebhookResponse handleDirectAttachmentDeleted(Map<String, Object> payload, RestResponse res) {
         try {
@@ -86,9 +83,13 @@ global without sharing class JiraWebhookEndpoint {
             System.debug('Deleting file: ' + filename + ' (ID: ' + attachmentId + ')');
             
             // Get issue info
+            // NOTE: 'attachment_deleted' payload sometimes omits 'issue'. 
+            // If missing, we cannot proceed here. The 'jira:issue_updated' handler will catch it via changelog.
             Map<String, Object> issue = (Map<String, Object>) payload.get('issue');
             if(issue == null) {
-                return new WebhookResponse(false, 'No issue data found');
+                String msg = 'No issue data in attachment_deleted payload. Skipping (will rely on changelog).';
+                System.debug(LoggingLevel.WARN, msg);
+                return new WebhookResponse(true, msg);
             }
             
             String jiraKey = (String) issue.get('key');
@@ -119,7 +120,6 @@ global without sharing class JiraWebhookEndpoint {
             
         } catch(Exception e) {
             System.debug(LoggingLevel.ERROR, 'Error in direct attachment deletion: ' + e.getMessage());
-            System.debug(LoggingLevel.ERROR, 'Stack trace: ' + e.getStackTraceString());
             res.statusCode = 500;
             return new WebhookResponse(false, 'Error: ' + e.getMessage());
         }
@@ -162,64 +162,76 @@ global without sharing class JiraWebhookEndpoint {
     }
     
     /**
-     * IMPROVED: Delete file from Salesforce with better matching
+     * IMPROVED: Delete file from Salesforce with better matching & Guest User Fallback
      */
     private static Boolean deleteFileFromSalesforce(Id caseId, String jiraFilename) {
         System.debug('=== FILE DELETION DEBUG ===');
         System.debug('Looking for file: "' + jiraFilename + '"');
         System.debug('On Case: ' + caseId);
         
-        // Get ALL files on the Case
+        // Map of DocumentId => Filename (normalized)
+        Map<Id, String> candidateFiles = new Map<Id, String>();
+
+        // 1. Try standard ContentDocumentLink query
         List<ContentDocumentLink> allLinks = [
-            SELECT Id, ContentDocumentId, 
-                   ContentDocument.Title, 
-                   ContentDocument.FileExtension,
-                   ContentDocument.LatestPublishedVersionId
+            SELECT ContentDocumentId, ContentDocument.Title, ContentDocument.FileExtension
             FROM ContentDocumentLink
             WHERE LinkedEntityId = :caseId
         ];
         
-        System.debug('Found ' + allLinks.size() + ' total files on Case');
-        
-        if(allLinks.isEmpty()) {
-            System.debug('❌ No files found on Case at all');
-            return false;
+        System.debug('Found ' + allLinks.size() + ' files via ContentDocumentLink');
+
+        for(ContentDocumentLink link : allLinks) {
+            String name = link.ContentDocument.Title;
+            // Append extension if not already present in title
+            if(String.isNotBlank(link.ContentDocument.FileExtension) && !name.endsWithIgnoreCase('.' + link.ContentDocument.FileExtension)) {
+                name += '.' + link.ContentDocument.FileExtension;
+            }
+            candidateFiles.put(link.ContentDocumentId, name);
         }
         
-        // Try to match the filename
-        Id docIdToDelete = null;
-        
-        for(ContentDocumentLink link : allLinks) {
-            String sfTitle = link.ContentDocument.Title;
-            String sfExtension = link.ContentDocument.FileExtension;
+        // 2. Fallback: Query ContentVersion directly (Fix for Guest Users)
+        // Guest users sometimes can't query ContentDocumentLink but can see ContentVersion they created or via FirstPublishLocationId
+        if(candidateFiles.isEmpty()) {
+            System.debug('⚠️ No files found via Links. Attempting ContentVersion fallback...');
+            List<ContentVersion> versions = [
+                SELECT ContentDocumentId, Title, FileExtension 
+                FROM ContentVersion 
+                WHERE FirstPublishLocationId = :caseId
+                AND IsLatest = true
+            ];
+            System.debug('Found ' + versions.size() + ' files via ContentVersion');
             
-            // Build the full filename
-            String sfFullFilename = sfTitle;
-            if(String.isNotBlank(sfExtension)) {
-                // Check if title already has extension
-                if(!sfTitle.endsWithIgnoreCase('.' + sfExtension)) {
-                    sfFullFilename += '.' + sfExtension;
+            for(ContentVersion cv : versions) {
+                String name = cv.Title;
+                if(String.isNotBlank(cv.FileExtension) && !name.endsWithIgnoreCase('.' + cv.FileExtension)) {
+                    name += '.' + cv.FileExtension;
                 }
+                candidateFiles.put(cv.ContentDocumentId, name);
             }
+        }
+        
+        if(candidateFiles.isEmpty()) {
+            System.debug('❌ No matching files found on Case (after fallback)');
+            return false;
+        }
+
+        // 3. Match filename
+        Id docIdToDelete = null;
+        for(Id docId : candidateFiles.keySet()) {
+            String sfFilename = candidateFiles.get(docId);
             
-            System.debug('Comparing:');
-            System.debug('  Jira: "' + jiraFilename + '"');
-            System.debug('  SF:   "' + sfFullFilename + '"');
-            System.debug('  Match: ' + (sfFullFilename.equalsIgnoreCase(jiraFilename)));
+            System.debug('Checking: ' + sfFilename);
             
-            // Try exact match (case-insensitive)
-            if(sfFullFilename.equalsIgnoreCase(jiraFilename)) {
-                docIdToDelete = link.ContentDocumentId;
-                System.debug('✓ EXACT MATCH FOUND: ' + link.ContentDocumentId);
+            // Exact match
+            if(sfFilename.equalsIgnoreCase(jiraFilename)) {
+                docIdToDelete = docId;
+                System.debug('✓ MATCH FOUND: ' + docId);
                 break;
             }
-            
-            // Try without extension
-            if(sfTitle.equalsIgnoreCase(jiraFilename)) {
-                docIdToDelete = link.ContentDocumentId;
-                System.debug('✓ MATCH FOUND (title only): ' + link.ContentDocumentId);
-                break;
-            }
+            // Try title-only match (if Jira sent filename without extension but SF has it)
+            // Or if Jira sent filename WITH extension but SF title is just the name
+            // (Note: The normalization above handles most extension cases)
         }
         
         if(docIdToDelete != null) {
@@ -227,7 +239,7 @@ global without sharing class JiraWebhookEndpoint {
                 // CRITICAL: Set flag to prevent trigger from firing
                 CaseTriggerHelper.isExecuting = true;
                 
-                // Delete ContentDocument (cascades to ContentDocumentLink)
+                // Delete ContentDocument
                 delete new ContentDocument(Id = docIdToDelete);
                 
                 System.debug('✓ Successfully deleted ContentDocument: ' + docIdToDelete);
@@ -240,18 +252,7 @@ global without sharing class JiraWebhookEndpoint {
                 CaseTriggerHelper.isExecuting = false;
             }
         } else {
-            System.debug('❌ No matching file found');
-            
-            // List what we DO have for debugging
-            System.debug('Available files:');
-            for(ContentDocumentLink link : allLinks) {
-                String fullName = link.ContentDocument.Title;
-                if(String.isNotBlank(link.ContentDocument.FileExtension)) {
-                    fullName += '.' + link.ContentDocument.FileExtension;
-                }
-                System.debug('  - ' + fullName);
-            }
-            
+            System.debug('❌ Filename not found among candidates');
             return false;
         }
     }
@@ -268,7 +269,6 @@ global without sharing class JiraWebhookEndpoint {
             if(targetCase == null) {
                 String msg = 'ERROR: No Case found with Jira Key: ' + jiraKey;
                 System.debug(LoggingLevel.ERROR, msg);
-                debugExistingCases();
                 res.statusCode = 200;
                 return new WebhookResponse(false, msg);
             }
@@ -320,7 +320,6 @@ global without sharing class JiraWebhookEndpoint {
             
         } catch(Exception e) {
             System.debug(LoggingLevel.ERROR, 'Error handling attachment: ' + e.getMessage());
-            System.debug(LoggingLevel.ERROR, 'Stack trace: ' + e.getStackTraceString());
             res.statusCode = 500;
             return new WebhookResponse(false, 'Error: ' + e.getMessage());
         }
@@ -374,7 +373,6 @@ global without sharing class JiraWebhookEndpoint {
     
         } catch(Exception e) {
             System.debug(LoggingLevel.ERROR, 'Error in direct attachment handler: ' + e.getMessage());
-            System.debug(LoggingLevel.ERROR, 'Stack trace: ' + e.getStackTraceString());
             res.statusCode = 500;
             return new WebhookResponse(false, 'Error: ' + e.getMessage());
         }
@@ -446,25 +444,7 @@ global without sharing class JiraWebhookEndpoint {
         return null;
     }
     
-    /**
-     * Debug existing Cases
-     */
-    private static void debugExistingCases() {
-        List<Case> recentCases = [
-            SELECT Id, CaseNumber, Jira_Issue_Key__c
-            FROM Case 
-            WHERE Jira_Issue_Key__c != null
-            ORDER BY CreatedDate DESC
-            LIMIT 10
-        ];
-        
-        System.debug('=== RECENT CASES ===');
-        for(Case c : recentCases) {
-            System.debug('Case ' + c.CaseNumber + ': "' + c.Jira_Issue_Key__c + '"');
-        }
-    }
-    
-    // Comment handlers (keeping existing code)
+    // Comment handlers
     private static WebhookResponse handleCommentDeleted(Map<String, Object> payload, RestResponse res) {
         Map<String, Object> issue = (Map<String, Object>) payload.get('issue');
         if(issue == null) throw new WebhookException('Missing issue data');
@@ -581,6 +561,50 @@ global without sharing class JiraWebhookEndpoint {
         return null;
     }
     
+    public static void deleteFileSystemMode(String caseId, String jiraFilename) {
+        System.debug('Executing System Mode Deletion for: ' + jiraFilename);
+        
+        List<ContentDocumentLink> allLinks = [
+            SELECT ContentDocumentId, ContentDocument.Title, ContentDocument.FileExtension
+            FROM ContentDocumentLink
+            WHERE LinkedEntityId = :caseId
+        ];
+        
+        Id docIdToDelete = null;
+        
+        for(ContentDocumentLink link : allLinks) {
+            String sfTitle = link.ContentDocument.Title;
+            String sfExtension = link.ContentDocument.FileExtension;
+            String sfFullFilename = sfTitle;
+            
+            // Reconstruct full filename
+            if(String.isNotBlank(sfExtension) && !sfTitle.endsWithIgnoreCase('.' + sfExtension)) {
+                sfFullFilename += '.' + sfExtension;
+            }
+            
+            // Match (Exact or Title-only)
+            if(sfFullFilename.equalsIgnoreCase(jiraFilename) || sfTitle.equalsIgnoreCase(jiraFilename)) {
+                docIdToDelete = link.ContentDocumentId;
+                break;
+            }
+        }
+        
+        if(docIdToDelete != null) {
+            try {
+                // Prevent recursion
+                CaseTriggerHelper.isExecuting = true;
+                delete new ContentDocument(Id = docIdToDelete);
+                System.debug('Successfully deleted file: ' + docIdToDelete);
+            } catch(Exception e) {
+                System.debug(LoggingLevel.ERROR, 'System Mode Delete Failed: ' + e.getMessage());
+            } finally {
+                CaseTriggerHelper.isExecuting = false;
+            }
+        } else {
+            System.debug('File not found in System Mode query: ' + jiraFilename);
+        }
+    }
+
     private static String getDeletedFilename(Map<String, Object> payload) {
         Map<String, Object> changelog = (Map<String, Object>) payload.get('changelog');
         if(changelog == null) return null;
